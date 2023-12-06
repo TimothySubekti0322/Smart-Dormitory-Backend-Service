@@ -32,7 +32,7 @@ class OrderController extends BaseController
         if ($data) {
             return $this->respond($data);
         } else {
-            return $this->failNotFound('No Package Found');
+            return $this->failNotFound('No Order Found');
         }
     }
 
@@ -43,7 +43,17 @@ class OrderController extends BaseController
      */
     public function show($id = null)
     {
-        //
+        $model = new Order();
+        $data = $model->find($id);
+
+        if (!$data) {
+            return $this->failNotFound('No Order Found');
+        }
+
+        return $this->respond([
+            'status' => 200,
+            'data' => $data['order']
+        ]);
     }
 
     /**
@@ -133,10 +143,19 @@ class OrderController extends BaseController
      */
     public function update($id = null)
     {
+        $model = new Order();
+        $data = $model->find($id);
+
+        if (!$data) {
+            return $this->failNotFound('No Order Found');
+        }
+
+        $data['order'] = $this->request->getVar('order');
+        $model->save($data);
         return $this->respond([
-            'status' => 403,
+            'status' => 200,
             'messages' => [
-                'error' => 'You are not allowed to update this package'
+                'success' => 'Order updated'
             ]
         ]);
     }
@@ -148,12 +167,20 @@ class OrderController extends BaseController
      */
     public function delete($id = null)
     {
-
-        return $this->respond([
-            'status' => 403,
-            'messages' => [
-                'error' => 'You are not allowed to delete this package'
-            ]
-        ]);
+        $model = new Order();
+        $data = $model->where('id', $id)->delete($id);
+        if ($data) {
+            $model->delete($id);
+            $response = [
+                'status'   => 200,
+                'error'    => null,
+                'messages' => [
+                    'success' => 'Order successfully deleted'
+                ]
+            ];
+            return $this->respondDeleted($response);
+        } else {
+            return $this->failNotFound('No Order Found');
+        }
     }
 }
