@@ -14,3 +14,7 @@ $routes->get('/package', 'PackageController::index');
 $routes->post('/package', 'PackageController::create');
 $routes->get('/user/quota/(:num)', 'QuotaController::show/$1');
 $routes->patch('/user/quota/(:num)', 'QuotaController::update/$1');
+$routes->get('/order', 'OrderController::index');
+$routes->get('/order/(:num)', 'OrderController::show/$1');
+$routes->post('/order', 'OrderController::create');
+$routes->delete('/Order/(:num)', 'OrderController::delete/$1');
