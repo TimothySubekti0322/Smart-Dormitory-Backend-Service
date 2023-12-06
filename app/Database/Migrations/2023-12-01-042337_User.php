@@ -33,22 +33,14 @@ class User extends Migration
             'quota' => [
                 'type' => 'INT',
                 'default' => '0'
-            ],
-            'created_at' => [
-                'type' => 'DATETIME',
-                'null' => true,
-            ],
-            'updated_at' => [
-                'type' => 'DATETIME',
-                'null' => true,
-            ],
+            ]
         ]);
         $this->forge->addKey('id', true);
-        $this->forge->createTable('user');
+        $this->forge->createTable('users');
     }
 
     public function down()
     {
-        $this->forge->dropTable('user');
+        $this->forge->dropTable('users');
     }
 }

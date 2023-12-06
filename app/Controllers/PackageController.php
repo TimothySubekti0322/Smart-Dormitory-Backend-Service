@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\API\ResponseTrait;
+use App\Models\Package;
+use App\Libraries\AuthorizedService;
 
 class PackageController extends ResourceController
 {
@@ -15,9 +17,23 @@ class PackageController extends ResourceController
 
     use ResponseTrait;
 
+    protected $authorizedService;
+
+    public function __construct()
+    {
+        // Instantiate AuthorizedService in the constructor
+        $this->authorizedService = new AuthorizedService();
+    }
+
     public function index()
     {
-        
+        $model = new Package();
+        $data = $model->findAll();
+        if ($data) {
+            return $this->respond($data);
+        } else {
+            return $this->failNotFound('No Package Found');
+        }
     }
 
     /**
@@ -37,7 +53,12 @@ class PackageController extends ResourceController
      */
     public function new()
     {
-        //
+        return $this->respond([
+            'status' => 403,
+            'messages' => [
+                'error' => 'You are not allowed to access this method'
+            ]
+        ]);
     }
 
     /**
@@ -47,7 +68,45 @@ class PackageController extends ResourceController
      */
     public function create()
     {
-        //
+        $userData = $this->authorizedService->authorizeRequest($this->request);
+
+        if ($userData['status'] != 200) {
+            return $this->respond([
+                'status' => 401,
+                'messages' => [
+                    'error' => $userData['message']
+                ]
+            ]);
+        }
+
+        $rules = [
+            'name' => 'required',
+            'price' => 'required|greater_than[0]',
+            'description' => 'required',
+        ];
+
+        if (!$this->validate($rules)) {
+            return $this->respond(
+                [
+                    'status' => 400,
+                    'error' => $this->validator->getErrors(),
+                ]
+            );
+        }
+
+        $model = new Package();
+        $data = [
+            'name' => $this->request->getVar('name'),
+            'price' => $this->request->getVar('price'),
+            'description' => $this->request->getVar('description'),
+        ];
+        $model->insert($data);
+        return $this->respond([
+            'status' => 201,
+            'messages' => [
+                'success' => 'Package created successfully'
+            ]
+        ]);
     }
 
     /**
@@ -57,7 +116,12 @@ class PackageController extends ResourceController
      */
     public function edit($id = null)
     {
-        //
+        return $this->respond([
+            'status' => 403,
+            'messages' => [
+                'error' => 'You are not allowed to edit this package'
+            ]
+        ]);
     }
 
     /**
@@ -67,7 +131,12 @@ class PackageController extends ResourceController
      */
     public function update($id = null)
     {
-        //
+        return $this->respond([
+            'status' => 403,
+            'messages' => [
+                'error' => 'You are not allowed to update this package'
+            ]
+        ]);
     }
 
     /**
@@ -77,6 +146,11 @@ class PackageController extends ResourceController
      */
     public function delete($id = null)
     {
-        //
+        return $this->respond([
+            'status' => 403,
+            'messages' => [
+                'error' => 'You are not allowed to delete this package'
+            ]
+        ]);
     }
 }
