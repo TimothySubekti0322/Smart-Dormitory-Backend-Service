@@ -6,7 +6,7 @@ use CodeIgniter\Model;
 
 class User extends Model
 {
-    protected $table            = 'user';
+    protected $table            = 'users';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
@@ -15,7 +15,7 @@ class User extends Model
     protected $allowedFields    = ['email', 'username', 'roomId', 'password', 'quota'];
 
     // Dates
-    protected $useTimestamps = true;
+    protected $useTimestamps = false;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';

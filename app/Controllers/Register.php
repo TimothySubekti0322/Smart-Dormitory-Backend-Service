@@ -13,9 +13,9 @@ class Register extends BaseController
     public function index()
     {
         $rules = [
-            'email' => 'required|valid_email|is_unique[user.email]',
+            'email' => 'required|valid_email|is_unique[users.email]',
             'username' => 'required',
-            'roomId' => 'required|is_unique[user.roomId]',
+            'roomId' => 'required|is_unique[users.roomId]',
             'password' => 'required',
         ];
 
