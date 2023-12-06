@@ -32,7 +32,7 @@ class User extends Migration
             ],
             'quota' => [
                 'type' => 'INT',
-                'default' => '0'
+                'default' => 0
             ]
         ]);
         $this->forge->addKey('id', true);

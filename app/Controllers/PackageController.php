@@ -43,7 +43,13 @@ class PackageController extends ResourceController
      */
     public function show($id = null)
     {
-        //
+        $model = new Package();
+        $data = $model->find($id);
+        if ($data) {
+            return $this->respond($data);
+        } else {
+            return $this->failNotFound('No Package Found');
+        }
     }
 
     /**
