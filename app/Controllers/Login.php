@@ -49,7 +49,8 @@ class Login extends BaseController
             'data' => [
                 'id' => $user['id'],
                 'name' => $user['username'],
-                'email' => $user['email']
+                'email' => $user['email'],
+                'quota' => $user['quota']
             ]
         ];
 
