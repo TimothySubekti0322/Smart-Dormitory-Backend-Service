@@ -52,7 +52,7 @@ class OrderController extends BaseController
 
         return $this->respond([
             'status' => 200,
-            'data' => $data['order']
+            'data' => $data
         ]);
     }
 
