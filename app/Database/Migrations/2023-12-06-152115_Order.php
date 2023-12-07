@@ -13,26 +13,26 @@ class Order extends Migration
                 'type'           => 'INT',
                 'auto_increment' => true,
             ],
+            'userId' => [
+                'type'       => 'INT',
+                'null'       =>  false,
+            ],
             'name' => [
                 'type'       => 'VARCHAR',
                 'constraint' => '255',
-                'unique' => true
             ],
             'roomId' => [
                 'type'       => 'INT',
             ],
             'phone' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '255',
-                'unique' => true
+                'constraint' => '255'
             ],
             'menuId' => [
                 'type'       => 'INT',
-
             ],
         ]);
         $this->forge->addKey('id', true);
-        // $this->forge->addForeignKey('menuId', 'menu', 'id');
         $this->forge->createTable('orders');
     }
 

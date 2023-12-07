@@ -24,6 +24,9 @@ class Package extends Migration
             'description' => [
                 'type' => 'TEXT',
             ],
+            'quota' => [
+                'type' => 'INT',
+            ]
         ]);
         $this->forge->addKey('id', true);
         $this->forge->createTable('packages');

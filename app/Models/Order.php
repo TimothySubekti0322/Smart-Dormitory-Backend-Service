@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use CodeIgniter\Model;
+use App\Models\Menu;
 
 class Order extends Model
 {
@@ -12,7 +13,7 @@ class Order extends Model
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = ['name', 'roomId', 'phone', 'menuId'];
+    protected $allowedFields    = ['name', 'userId', 'roomId', 'phone', 'menuId'];
 
     // Dates
     protected $useTimestamps = false;
@@ -37,4 +38,38 @@ class Order extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    // Method to get all orders
+    public function getAllOrders()
+    {
+        return $this->findAll();
+    }
+
+    // Method to get orders by date and category
+    public function getOrdersByDateAndCategory($date, $category)
+    {
+        $db = \Config\Database::connect();
+        $builder = $db->table('menus');
+
+        if ($date) {
+            $builder->where('date', $date);
+        }
+
+        if ($category) {
+            $builder->where('category', $category);
+        }
+
+        // Execute the query and fetch menu IDs
+        $menuIds = array_column($builder->get()->getResultArray(), 'id');
+
+        // Proceed only if there are menu IDs
+        if (!empty($menuIds)) {
+            $builder2 = $db->table('orders');
+            $builder2->whereIn('menuId', $menuIds); // Using the array of IDs
+
+            return $builder2->get()->getResultArray();
+        }
+
+        return [];
+    }
 }

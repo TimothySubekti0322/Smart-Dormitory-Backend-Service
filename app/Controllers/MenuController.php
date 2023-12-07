@@ -5,12 +5,19 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use App\Models\Menu;
 use CodeIgniter\API\ResponseTrait;
-use CodeIgniter\Files\File;
-use CodeIgniter\Validation\StrictRules\Rules;
+use App\Libraries\AuthorizedService;
 
 class MenuController extends BaseController
 {
     use ResponseTrait;
+
+    protected $authorizedService;
+
+    public function __construct()
+    {
+        // Instantiate AuthorizedService in the constructor
+        $this->authorizedService = new AuthorizedService();
+    }
 
     public function index()
     {
@@ -28,6 +35,26 @@ class MenuController extends BaseController
 
     public function create()
     {
+        $userData = $this->authorizedService->authorizeRequest($this->request);
+
+        if ($userData['status'] != 200) {
+            return $this->respond([
+                'status' => 401,
+                'messages' => [
+                    'error' => $userData['message']
+                ]
+            ]);
+        }
+
+        if ($userData['data']->data->role != 'admin') {
+            return $this->respond([
+                'status' => 403,
+                'messages' => [
+                    'error' => 'You are not allowed to access this method'
+                ]
+            ]);
+        }
+
         try {
             if (!$this->validate([
                 'file' => [
@@ -87,6 +114,26 @@ class MenuController extends BaseController
 
     public function update($id = null)
     {
+        $userData = $this->authorizedService->authorizeRequest($this->request);
+
+        if ($userData['status'] != 200) {
+            return $this->respond([
+                'status' => 401,
+                'messages' => [
+                    'error' => $userData['message']
+                ]
+            ]);
+        }
+
+        if ($userData['data']->data->role != 'admin') {
+            return $this->respond([
+                'status' => 403,
+                'messages' => [
+                    'error' => 'You are not allowed to access this method'
+                ]
+            ]);
+        }
+
         try {
             $model = new Menu();
             $data = $model->find($id);
@@ -179,6 +226,26 @@ class MenuController extends BaseController
 
     public function delete($id = null)
     {
+        $userData = $this->authorizedService->authorizeRequest($this->request);
+
+        if ($userData['status'] != 200) {
+            return $this->respond([
+                'status' => 401,
+                'messages' => [
+                    'error' => $userData['message']
+                ]
+            ]);
+        }
+
+        if ($userData['data']->data->role != 'admin') {
+            return $this->respond([
+                'status' => 403,
+                'messages' => [
+                    'error' => 'You are not allowed to access this method'
+                ]
+            ]);
+        }
+
         $model = new Menu();
         $data = $model->find($id);
 
@@ -206,7 +273,7 @@ class MenuController extends BaseController
         }
     }
 
-    function urlToFilepath($url)
+    public function urlToFilepath($url)
     {
         // Extract the part of the URL after the base URL
         $baseUrl = getenv('app.baseUrl');

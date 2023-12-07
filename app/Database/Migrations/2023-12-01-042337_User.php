@@ -33,7 +33,12 @@ class User extends Migration
             'quota' => [
                 'type' => 'INT',
                 'default' => 0
-            ]
+            ],
+            'role' => [
+                'type' => 'ENUM',
+                'constraint' => ['admin', 'user'],
+                'default' => 'user'
+            ],
         ]);
         $this->forge->addKey('id', true);
         $this->forge->createTable('users');

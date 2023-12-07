@@ -5,7 +5,9 @@ namespace App\Controllers;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\API\ResponseTrait;
 use App\Models\Order;
+use App\Models\Menu;
 use App\Libraries\AuthorizedService;
+
 
 class OrderController extends BaseController
 {
@@ -27,8 +29,39 @@ class OrderController extends BaseController
 
     public function index()
     {
+        $auth = $this->authorizedService->authorizeRequest($this->request);
+
+        if ($auth['status'] != 200) {
+            return $this->respond([
+                'status' => 401,
+                'messages' => [
+                    'error' => $auth['message']
+                ]
+            ]);
+        }
+
+        if ($auth['data']->data->role != 'admin') {
+            return $this->respond([
+                'status' => 403,
+                'messages' => [
+                    'error' => 'You are not allowed to access this method'
+                ]
+            ]);
+        }
+
         $model = new Order();
-        $data = $model->findAll();
+
+        $date = $this->request->getGet('date');
+        $category = $this->request->getGet('category');
+
+        if ($date || $category) {
+            // Get filtered orders if any query parameters are provided
+            $data = $model->getOrdersByDateAndCategory($date, $category);
+        } else {
+            // Get all orders if no query parameters are provided
+            $data = $model->getAllOrders();
+        }
+
         if ($data) {
             return $this->respond($data);
         } else {
@@ -43,31 +76,32 @@ class OrderController extends BaseController
      */
     public function show($id = null)
     {
+        $auth = $this->authorizedService->authorizeRequest($this->request);
+
+        if ($auth['status'] != 200) {
+            return $this->respond([
+                'status' => 401,
+                'messages' => [
+                    'error' => $auth['message']
+                ]
+            ]);
+        }
+
         $model = new Order();
         $data = $model->find($id);
 
         if (!$data) {
-            return $this->failNotFound('No Order Found');
+            return $this->respond([
+                'status' => 404,
+                'messages' => [
+                    'error' => 'No Order Found'
+                ]
+            ]);
         }
 
         return $this->respond([
             'status' => 200,
             'data' => $data
-        ]);
-    }
-
-    /**
-     * Return a new resource object, with default properties
-     *
-     * @return mixed
-     */
-    public function new()
-    {
-        return $this->respond([
-            'status' => 403,
-            'messages' => [
-                'error' => 'You are not allowed to access this method'
-            ]
         ]);
     }
 
@@ -78,19 +112,20 @@ class OrderController extends BaseController
      */
     public function create()
     {
-        $userData = $this->authorizedService->authorizeRequest($this->request);
+        $auth = $this->authorizedService->authorizeRequest($this->request);
 
-        if ($userData['status'] != 200) {
+        if ($auth['status'] != 200) {
             return $this->respond([
                 'status' => 401,
                 'messages' => [
-                    'error' => $userData['message']
+                    'error' => $auth['message']
                 ]
             ]);
         }
 
         $rules = [
             'name' => 'required',
+            'userId' => 'required',
             'roomId' => 'required',
             'phone' => 'required',
             'menuId' => 'required',
@@ -105,57 +140,56 @@ class OrderController extends BaseController
             );
         }
 
+
+
+
+
+
+
+
+
         $model = new Order();
         $data = [
             'name' => $this->request->getVar('name'),
+            'userId' => $this->request->getVar('userId'),
             'roomId' => $this->request->getVar('roomId'),
-            'phone' => $this->request->getVar('phone'),
-            'menuId' => $this->request->getVar('menuId'),
+            'phone' => $this->request->getVar('phone')
         ];
-        $model->insert($data);
+
+        // check if the user is valid
+        $userModel = new \App\Models\User();
+        $user = $userModel->find((int) $data['userId']);
+        if (!$user) {
+            return $this->respond([
+                'status' => 404,
+                'messages' => [
+                    'error' => 'There is no user with id ' . $data['userId'] . ' found'
+                ]
+            ]);
+        }
+
+        $menuId = $this->request->getVar('menuId');
+
+        $menuModel = new Menu();
+
+        for ($i = 0; $i < count($menuId); $i++) {
+            // Check if the menuId is valid
+            $menu = $menuModel->find((int) $menuId[$i]);
+            if (!$menu) {
+                return $this->respond([
+                    'status' => 404,
+                    'messages' => [
+                        'error' => 'There is no menu with id ' . $menuId[$i] . ' found'
+                    ]
+                ]);
+            }
+            $data['menuId'] = (int)$menuId[$i];
+            $model->insert($data);
+        }
         return $this->respond([
             'status' => 201,
             'messages' => [
                 'success' => 'Order created successfully'
-            ]
-        ]);
-    }
-
-    /**
-     * Return the editable properties of a resource object
-     *
-     * @return mixed
-     */
-    public function edit($id = null)
-    {
-        return $this->respond([
-            'status' => 403,
-            'messages' => [
-                'error' => 'You are not allowed to edit this package'
-            ]
-        ]);
-    }
-
-    /**
-     * Add or update a model resource, from "posted" properties
-     *
-     * @return mixed
-     */
-    public function update($id = null)
-    {
-        $model = new Order();
-        $data = $model->find($id);
-
-        if (!$data) {
-            return $this->failNotFound('No Order Found');
-        }
-
-        $data['order'] = $this->request->getVar('order');
-        $model->save($data);
-        return $this->respond([
-            'status' => 200,
-            'messages' => [
-                'success' => 'Order updated'
             ]
         ]);
     }
@@ -167,20 +201,72 @@ class OrderController extends BaseController
      */
     public function delete($id = null)
     {
-        $model = new Order();
-        $data = $model->where('id', $id)->delete($id);
-        if ($data) {
-            $model->delete($id);
-            $response = [
-                'status'   => 200,
-                'error'    => null,
+        $auth = $this->authorizedService->authorizeRequest($this->request);
+
+        if ($auth['status'] != 200) {
+            return $this->respond([
+                'status' => 401,
                 'messages' => [
-                    'success' => 'Order successfully deleted'
+                    'error' => $auth['message']
                 ]
-            ];
-            return $this->respondDeleted($response);
-        } else {
-            return $this->failNotFound('No Order Found');
+            ]);
         }
+
+        if ($auth['data']->data->role != 'admin') {
+            return $this->respond([
+                'status' => 403,
+                'messages' => [
+                    'error' => 'You are not allowed to access this method'
+                ]
+            ]);
+        }
+
+        $model = new Order();
+        $data = $model->find($id);
+        if (!$data) {
+            return $this->respond([
+                'status' => 404,
+                'messages' => [
+                    'error' => 'No Order Found'
+                ]
+            ]);
+        }
+        $model->where('id', $id)->delete($id);
+        return $this->respond([
+            'status' => 200,
+            'messages' => [
+                'success' => 'Order successfully deleted'
+            ]
+        ]);
+    }
+
+    public function showHistory($id = null)
+    {
+        $auth = $this->authorizedService->authorizeRequest($this->request);
+
+        if ($auth['status'] != 200) {
+            return $this->respond([
+                'status' => 401,
+                'messages' => [
+                    'error' => $auth['message']
+                ]
+            ]);
+        }
+
+        $model = new Order();
+        $data = $model->where('userId', $id)->findAll();
+
+        if (!$data) {
+            return $this->respond([
+                'status' => 404,
+                'messages' => [
+                    'error' => 'No Order Found'
+                ]
+            ]);
+        }
+
+        return $this->respond(
+            $data
+        );
     }
 }

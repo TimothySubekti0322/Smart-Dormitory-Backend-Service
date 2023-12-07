@@ -39,7 +39,7 @@ class Login extends BaseController
         $key = getenv('JWT_SECRET');
 
         $iat = time();
-        $exp = $iat + (60 * 60);
+        $exp = $iat + (3600 * 60);
 
         $payload = [
             'iss' => 'c14-jwt',
@@ -50,7 +50,8 @@ class Login extends BaseController
                 'id' => $user['id'],
                 'name' => $user['username'],
                 'email' => $user['email'],
-                'quota' => $user['quota']
+                'quota' => $user['quota'],
+                'role' => $user['role'],
             ]
         ];
 
