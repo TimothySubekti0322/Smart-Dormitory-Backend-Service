@@ -6,7 +6,7 @@ use App\Controllers\BaseController;
 use App\Models\Menu;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\Files\File;
-
+use CodeIgniter\Validation\StrictRules\Rules;
 
 class MenuController extends BaseController
 {
@@ -26,30 +26,33 @@ class MenuController extends BaseController
         }
     }
 
-    private function uploadImage($file)
-    {
-        $img = $file;
-        if (!$img->hasMoved()) {
-            $filepath = WRITEPATH . 'uploads/' . $img->store();
-
-            $data = ['uploaded_fileinfo' => new File($filepath)];
-
-            return [
-                'status' => 'success',
-                'message' => 'Image uploaded successfully',
-                'url' => $filepath
-            ];
-        }
-        return [
-            'status' => 'error',
-            'message' => 'There was an error uploading the image'
-        ];
-    }
-
     public function create()
     {
         try {
+            if (!$this->validate([
+                'file' => [
+                    'rules' => 'uploaded[file]|max_size[file,6072]|is_image[file]|ext_in[file,jpg,jpeg,png]',
+                    'errors' => [
+                        'uploaded' => 'No file selected',
+                        'max_size' => 'File size too large',
+                        'is_image' => 'File is not an image',
+                        'ext_in' => 'File type not allowed'
+                    ]
+                ]
+            ])) {
+                return $this->respond([
+                    'status' => 400,
+                    'message' => $this->validator->getErrors()
+                ]);
+            }
+
+            // Check if the image file is provided
+
+
             $imageFile = $this->request->getFile('file');
+
+            $imageFile->move('./uploads');
+
             if (!$imageFile) {
                 return $this->respond([
                     'status' => 400,
@@ -57,20 +60,10 @@ class MenuController extends BaseController
                 ]);
             }
 
-            // Process the image file and upload to Cloudinary
-            $uploadResult = $this->uploadImage($imageFile);
-            if ($uploadResult['status'] === 'error') {
-                return $this->respond([
-                    'status' => 400,
-                    'message' => $uploadResult['message']
-                ]);
-            }
-
-
             //Save the data to the database
             $model = new Menu();
             $data = [
-                'imgpath' => $uploadResult['url'],
+                'imgpath' => getenv('app.baseUrl') . 'uploads' . '/' . $imageFile->getName(),
                 'name' => $this->request->getVar('name'),
                 'description' => $this->request->getVar('description'),
                 'date' => $this->request->getVar('date'),
@@ -94,54 +87,93 @@ class MenuController extends BaseController
 
     public function update($id = null)
     {
-        $model = new Menu();
-        $data = $model->find($id);
+        try {
+            $model = new Menu();
+            $data = $model->find($id);
 
-        if (!$data) {
-            return $this->respond([
-                'status' => 404,
-                'message' => 'Menu not found'
-            ]);
-        }
-
-        // Check if a new image file is provided
-        $imageFile = $this->request->getFile('file');
-        if ($imageFile && $imageFile->isValid() && !$imageFile->hasMoved()) {
-            // Delete the old image
-            $oldImagePath = $data['imgpath'];
-            if (file_exists($oldImagePath)) {
-                unlink($oldImagePath);
-            }
-
-            // Upload the new image
-            $uploadResult = $this->uploadImage($imageFile);
-            if ($uploadResult['status'] === 'error') {
+            if (!$data) {
                 return $this->respond([
-                    'status' => 400,
-                    'message' => $uploadResult['message']
+                    'status' => 404,
+                    'message' => 'Menu not found'
                 ]);
             }
 
-            // Update the image path in the data array
-            $imgFullPath = $uploadResult['url'] . $uploadResult['name'];
-            $data['imgpath'] = $imgFullPath;
-        }
-
-        // Update the other fields
-        $input = $this->request->getRawInput();
-        foreach ($input as $key => $value) {
-            if (isset($data[$key])) {
-                $data[$key] = $value;
+            if (!$this->validate([
+                'file' => [
+                    'rules' => 'max_size[file,6072]|is_image[file]|ext_in[file,jpg,jpeg,png]',
+                    'errors' => [
+                        'max_size' => 'File size too large',
+                        'is_image' => 'File is not an image',
+                        'ext_in' => 'File type not allowed'
+                    ]
+                ]
+            ])) {
+                return $this->respond([
+                    'status' => 400,
+                    'message' => $this->validator->getErrors()
+                ]);
             }
+
+            // Check if a new image file is provided
+            $imageFile = $this->request->getFile('file');
+
+            // Proceed only if a file is uploaded
+            if ($imageFile && $imageFile->isValid() && !$imageFile->hasMoved()) {
+                // Delete the old image
+                $oldImagePath = $this->urlToFilepath($data['imgpath']);
+                if (file_exists($oldImagePath)) {
+                    unlink($oldImagePath);
+                }
+
+                // Move the new image
+                if ($imageFile->move('./uploads')) {
+                    // Update the image path in the data array
+                    $data['imgpath'] = getenv('app.baseUrl') . 'uploads' . '/' . $imageFile->getName();
+                } else {
+                    // Handle error
+                    return $this->respond([
+                        'status' => 400,
+                        'message' => 'Could not move the file'
+                    ]);
+                }
+            }
+
+            // Update the other fields
+            $name = $this->request->getVar('name');
+
+            if ($name) {
+                $data['name'] = $name;
+            }
+
+            $description = $this->request->getVar('description');
+            if ($description) {
+                $data['description'] = $description;
+            }
+
+            $date = $this->request->getVar('date');
+            if ($date) {
+                $data['date'] = $date;
+            }
+
+            $category = $this->request->getVar('category');
+            if ($category) {
+                $data['category'] = $category;
+            }
+
+
+            // Update the menu item in the database
+            $model->update($id, $data);
+
+            return $this->respond([
+                'status' => 200,
+                'message' => 'Menu updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return $this->respond([
+                'status' => 400,
+                'message' => $e->getMessage()
+            ]);
         }
-
-        // Update the menu item in the database
-        $model->update($id, $data);
-
-        return $this->respond([
-            'status' => 200,
-            'message' => 'Menu updated successfully'
-        ]);
     }
 
 
@@ -152,7 +184,7 @@ class MenuController extends BaseController
 
         if ($data) {
             // Extract the image path from the data
-            $imgPath = $data['imgpath'];
+            $imgPath = $this->urlToFilepath($data['imgpath']);
 
             // Check if the file exists and delete it
             if (file_exists($imgPath)) {
@@ -172,5 +204,20 @@ class MenuController extends BaseController
                 'message' => 'Menu not found'
             ]);
         }
+    }
+
+    function urlToFilepath($url)
+    {
+        // Extract the part of the URL after the base URL
+        $baseUrl = getenv('app.baseUrl');
+        $relativePath = str_replace($baseUrl, '', $url);
+
+        // Define the root directory project
+        $rootDirectory = FCPATH;
+
+        // Construct the full file path
+        $filePath = $rootDirectory . $relativePath;
+
+        return $filePath;
     }
 }

@@ -20,5 +20,5 @@ $routes->post('/order', 'OrderController::create');
 $routes->delete('/Order/(:num)', 'OrderController::delete/$1');
 $routes->get('/menu', 'MenuController::index');
 $routes->post('/menu', 'MenuController::create');
-$routes->patch('/menu/(:num)', 'MenuController::update/$1');
+$routes->post('/menu/(:num)', 'MenuController::update/$1');
 $routes->delete('/menu/(:num)', 'MenuController::delete/$1');
