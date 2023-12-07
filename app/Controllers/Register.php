@@ -25,6 +25,7 @@ class Register extends BaseController
                 'username' => $this->request->getVar('username'),
                 'roomId' => $this->request->getVar('roomId'),
                 'password' => password_hash($this->request->getVar('password'), PASSWORD_DEFAULT),
+                'role' => $this->request->getVar('role') == 'admin' ? 'admin' : 'user',
             ];
 
             $userModel = new User;

@@ -76,11 +76,22 @@ class PackageController extends ResourceController
     {
         $userData = $this->authorizedService->authorizeRequest($this->request);
 
-        if ($userData['status'] != 200) {
+        // if ($userData['status'] != 200) {
+        //     return $this->respond([
+        //         'status' => 401,
+        //         'messages' => [
+        //             'error' => $userData['message']
+        //         ]
+        //     ]);
+        // }
+
+
+
+        if ($userData['data']->data->role != 'admin') {
             return $this->respond([
-                'status' => 401,
+                'status' => 403,
                 'messages' => [
-                    'error' => $userData['message']
+                    'error' => 'You are not allowed to access this method'
                 ]
             ]);
         }
@@ -89,6 +100,7 @@ class PackageController extends ResourceController
             'name' => 'required',
             'price' => 'required|greater_than[0]',
             'description' => 'required',
+            'quota' => 'required|greater_than[0]'
         ];
 
         if (!$this->validate($rules)) {
@@ -105,6 +117,7 @@ class PackageController extends ResourceController
             'name' => $this->request->getVar('name'),
             'price' => $this->request->getVar('price'),
             'description' => $this->request->getVar('description'),
+            'quota' => $this->request->getVar('quota')
         ];
         $model->insert($data);
         return $this->respond([

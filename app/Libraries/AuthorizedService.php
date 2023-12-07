@@ -40,7 +40,7 @@ class AuthorizedService
         } catch (\Exception $e) {
             // Handle decode errors (invalid token, expired, etc.)
             return [
-                'message' => 'Invalid token',
+                'message' => $e->getMessage(),
                 'status' => 401
             ];
         }

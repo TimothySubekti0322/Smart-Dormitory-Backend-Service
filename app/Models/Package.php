@@ -12,7 +12,7 @@ class Package extends Model
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = ['name', 'price', 'description'];
+    protected $allowedFields    = ['name', 'price', 'description', 'quota'];
 
     // Dates
     protected $useTimestamps = false;
