@@ -22,3 +22,4 @@ $routes->get('/menu', 'MenuController::index');
 $routes->post('/menu', 'MenuController::create');
 $routes->post('/menu/(:num)', 'MenuController::update/$1');
 $routes->delete('/menu/(:num)', 'MenuController::delete/$1');
+$routes->POST('/payment', 'PaymentController::index');
