@@ -10,13 +10,31 @@ use App\Libraries\AuthorizedService;
 class QuotaController extends BaseController
 {
     use ResponseTrait;
-    
+
     protected $authorizedService;
 
     public function __construct()
     {
         // Instantiate AuthorizedService in the constructor
         $this->authorizedService = new AuthorizedService();
+
+        // Enable CORS
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE, PATCH');
+        header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
+
+        // Handle the preflight request for any type of request
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            // Return only the headers and not the content
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Headers: X-Requested-With, Content-Type, Origin, Authorization, Accept, Client-Security-Token, Accept-Encoding');
+
+            // You might want to set a status code 204 No Content here
+            header('HTTP/1.1 204 No Content');
+
+            // End script execution
+            exit;
+        }
     }
 
     public function index()
