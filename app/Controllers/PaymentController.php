@@ -28,7 +28,7 @@ class PaymentController extends BaseController
             header('Access-Control-Allow-Origin: *');
             header('Access-Control-Allow-Headers: X-Requested-With, Content-Type, Origin, Authorization, Accept, Client-Security-Token, Accept-Encoding');
 
-            // You might want to set a status code 204 No Content here
+            // You might want to set a sbotatus code 204 No Content here
             header('HTTP/1.1 204 No Content');
 
             // End script execution
